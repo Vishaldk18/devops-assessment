@@ -1,20 +1,25 @@
 name: Terraform CI
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
-      - develop
-  pull_request:
 
 jobs:
-  terraform-dev:
-    name: Terraform Dev
+  terraform:
+    name: Terraform (${{ matrix.environment }})
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        environment: [dev, prod]
 
     defaults:
       run:
-        working-directory: infra/envs/dev
+        working-directory: infra/envs/${{ matrix.environment }}
 
     steps:
       - name: Checkout Repository
@@ -22,42 +27,24 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
 
-      - name: Terraform Init
-        run: terraform init
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
 
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        run: terraform init
 
       - name: Terraform Validate
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -lock=false
-
-  terraform-prod:
-    name: Terraform Prod
-    runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: infra/envs/prod
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Format Check
-        run: terraform fmt -check -recursive
-
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Terraform Plan
-        run: terraform plan -lock=false
+        run: terraform plan -refresh=false -no-color
