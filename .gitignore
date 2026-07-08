@@ -1,6 +1,26 @@
+# Terraform
 .terraform/
 *.tfstate
 *.tfstate.*
 crash.log
+
+# Ignore secrets
 *.tfvars
-.terraform.lock.hcl
+
+# Keep examples
+!*.tfvars.example
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+database/.env
+backups/*.sql
+
+# Keep the directory
+!backups/.gitkeep
